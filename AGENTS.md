@@ -51,10 +51,15 @@ Panduan untuk AI coding agent di proyek **Catatan Uang** (web pencatat keuangan 
 
 ## Fase
 
-0. Persiapan: setup Next.js+TS+Tailwind, koneksi Supabase, SQL lengkap (tabel, constraint, trigger, RLS, data bawaan), `lib/data/`, `CONTEXT.md`, git init.
-1. MVP: auth (daftar/login/logout/reset/konfirmasi email), CRUD transaksi (soft delete), dashboard bulanan, daftar transaksi + pagination (maks 50), nav HP/sidebar laptop, format Rupiah, state loading/error/kosong.
+0. Persiapan: setup Next.js+TS+Tailwind, koneksi Supabase, SQL lengkap (tabel, constraint, trigger, RLS, data bawaan), `lib/data/`, `CONTEXT.md`, git init. **SELESAI**
+1. MVP: auth (daftar/login/logout/reset/konfirmasi email), CRUD transaksi (soft delete), dashboard bulanan, daftar transaksi + pagination (maks 50), nav HP/sidebar laptop, format Rupiah, state loading/error/kosong. **SELESAI**
 1.5 Grafik + ekspor CSV.
 2. Offline-first PWA (Dexie, mutation queue, sync push/pull, indikator status, backoff).
 2.5 Keamanan: matikan signup, Turnstile + rate limit, security headers (CSP report-only), audit RLS.
 3. Banyak dompet + transfer, pencarian/filter, anggaran per kategori, grafik multi-bulan.
 4. Berulang, target tabungan, mode gelap, impor CSV.
+
+## Status saat ini
+
+Fase 0 dan 1 selesai. Jangan menambah fitur fase lain tanpa diminta.
+Uji cepat: `node --env-file=.env.local scripts/smoke-data.mjs <email> <password>`.
