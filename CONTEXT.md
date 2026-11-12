@@ -87,7 +87,7 @@ Lima tabel di schema `public`: `profiles`, `wallets`, `categories`, `transaction
 
 ## 6. Cara menjalankan lokal
 
-1. Salin `.env.example` menjadi `.env.local`, isi URL dan anon key dari Supabase (Settings > API).
+1. Salin `.env.example` menjadi `.env.local`, isi URL dan kunci Supabase (Publishable key `sb_publishable_...` atau anon public legacy). Jangan pakai secret/service_role.
 2. Jalankan `supabase/schema.sql` di SQL Editor Supabase.
 3. `npm install`
 4. `npm run dev` → buka http://localhost:3000
