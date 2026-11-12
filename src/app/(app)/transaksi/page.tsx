@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { getCategories, getTransactions, getWallets, PAGE_SIZE } from "@/lib/data";
-import { currentMonthJakarta, formatMonthLabel, isValidMonth } from "@/lib/date";
-import { MonthPicker } from "@/components/summary-card";
+import {
+  currentMonthJakarta,
+  formatPeriodLabel,
+  isPeriode,
+  isValidDate,
+  isValidMonth,
+  periodRange,
+  type Periode,
+} from "@/lib/date";
+import { PeriodPicker } from "@/components/summary-card";
 import { TransactionList } from "@/components/transaction-list";
 
 const notices: Record<string, string> = {
@@ -12,15 +20,28 @@ const notices: Record<string, string> = {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bulan?: string; halaman?: string; pesan?: string }>;
+  searchParams: Promise<{
+    periode?: string;
+    tanggal?: string;
+    bulan?: string;
+    halaman?: string;
+    pesan?: string;
+  }>;
 }) {
-  const { bulan, halaman, pesan } = await searchParams;
-  const month = isValidMonth(bulan) ? bulan : currentMonthJakarta();
-  const page = Math.max(1, Number(halaman) || 1);
-  const notice = pesan ? notices[pesan] : undefined;
+  const query = await searchParams;
+  const periode: Periode = isPeriode(query.periode) ? query.periode : "bulanan";
+  const anchor = isValidDate(query.tanggal)
+    ? query.tanggal
+    : isValidMonth(query.bulan)
+      ? `${query.bulan}-01`
+      : `${currentMonthJakarta()}-01`;
+  const page = Math.max(1, Number(query.halaman) || 1);
+  const notice = query.pesan ? notices[query.pesan] : undefined;
+  const { start, end } = periodRange(periode, anchor);
+  const rangeQuery = `periode=${periode}&tanggal=${anchor}`;
 
   const [transactions, wallets, categories] = await Promise.all([
-    getTransactions({ month, page }),
+    getTransactions({ start, end, page }),
     getWallets(),
     getCategories(undefined, { includeArchived: true }),
   ]);
@@ -39,7 +60,7 @@ export default async function TransactionsPage({
             + Catat
           </Link>
         </div>
-        <MonthPicker month={month} basePath="/transaksi" />
+        <PeriodPicker periode={periode} anchor={anchor} basePath="/transaksi" />
       </div>
 
       {notice ? (
@@ -48,12 +69,17 @@ export default async function TransactionsPage({
         </p>
       ) : null}
 
-      <TransactionList transactions={transactions.rows} wallets={wallets} categories={categories} />
+      <TransactionList
+        transactions={transactions.rows}
+        wallets={wallets}
+        categories={categories}
+        groupByDate
+      />
 
       {transactions.total > 0 ? (
         <div className="flex items-center justify-between gap-2 text-sm">
           <Link
-            href={`/transaksi?bulan=${month}&halaman=${Math.max(1, page - 1)}`}
+            href={`/transaksi?${rangeQuery}&halaman=${Math.max(1, page - 1)}`}
             aria-disabled={page <= 1}
             className={`flex min-h-11 items-center rounded-lg border border-line px-3 ${
               page <= 1 ? "pointer-events-none opacity-40" : "bg-surface text-ink"
@@ -61,11 +87,12 @@ export default async function TransactionsPage({
           >
             Sebelumnya
           </Link>
-          <span className="text-muted">
-            Halaman {Math.min(page, totalPages)} dari {totalPages} · {formatMonthLabel(month)}
+          <span className="text-center text-muted">
+            Halaman {Math.min(page, totalPages)} dari {totalPages} ·{" "}
+            {formatPeriodLabel(periode, anchor)}
           </span>
           <Link
-            href={`/transaksi?bulan=${month}&halaman=${Math.min(totalPages, page + 1)}`}
+            href={`/transaksi?${rangeQuery}&halaman=${Math.min(totalPages, page + 1)}`}
             aria-disabled={page >= totalPages}
             className={`flex min-h-11 items-center rounded-lg border border-line px-3 ${
               page >= totalPages ? "pointer-events-none opacity-40" : "bg-surface text-ink"

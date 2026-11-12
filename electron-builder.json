@@ -1,0 +1,24 @@
+{
+  "appId": "id.catatanuang.desktop",
+  "productName": "Catatan Uang",
+  "directories": {
+    "output": "desktop/release",
+    "buildResources": "desktop"
+  },
+  "files": ["desktop/main.mjs"],
+  "extraResources": [
+    { "from": "desktop/dist/app", "to": "app", "filter": ["**/*", "!node_modules/**/*"] },
+    { "from": "desktop/dist/app/node_modules", "to": "app/node_modules" }
+  ],
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "desktop/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "shortcutName": "Catatan Uang",
+    "createDesktopShortcut": true
+  }
+}

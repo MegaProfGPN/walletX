@@ -52,6 +52,8 @@ export async function getCategories(
 
 export async function getTransactions(options?: {
   month?: string;
+  start?: string;
+  end?: string;
   page?: number;
 }): Promise<{ rows: Transaction[]; total: number }> {
   const supabase = await createClient();
@@ -67,10 +69,11 @@ export async function getTransactions(options?: {
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (options?.month) {
-    const { start, end } = monthRange(options.month);
-    query = query.gte("transaction_date", start).lt("transaction_date", end);
-  }
+  const range = options?.month ? monthRange(options.month) : null;
+  const start = options?.start ?? range?.start;
+  const end = options?.end ?? range?.end;
+  if (start) query = query.gte("transaction_date", start);
+  if (end) query = query.lt("transaction_date", end);
 
   const { data, error, count } = await query;
   if (error) throw error;

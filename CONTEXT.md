@@ -68,12 +68,13 @@ src/
     auth-form.tsx           form auth generik (useActionState)
     nav.tsx                 BottomNav + SideNav
     transaction-form.tsx    form transaksi
-    transaction-list.tsx    daftar transaksi + state kosong
-    summary-card.tsx        SummaryCard + MonthPicker
+    transaction-list.tsx    daftar transaksi + state kosong + judul per tanggal
+    summary-card.tsx        SummaryCard + MonthPicker + PeriodPicker
+    pwa-register.tsx        daftar service worker + banner pasang (iOS/Android)
   lib/
     env.ts            validasi env dengan Zod
     format.ts         formatRupiah() satu-satunya formatter uang
-    date.ts           todayJakarta(), currentMonthJakarta(), label tanggal/bulan
+    date.ts           todayJakarta(), currentMonthJakarta(), label tanggal/bulan, periode harian/mingguan/bulanan/tahunan
     types.ts          tipe database (ditulis tangan)
     validation.ts     skema Zod
     supabase/
@@ -90,9 +91,18 @@ src/
 supabase/
   schema.sql          skema lengkap
   verify-rls.sql      pemeriksaan RLS
+public/
+  manifest.json       manifest PWA (nama, ikon, standalone)
+  sw.js               service worker: cache shell + halaman offline
+  offline.html        halaman saat tidak ada internet
+  icon-*.png          ikon PWA (dari IconKitchen)
+  apple-touch-icon.png
 scripts/
   smoke-data.mjs      uji data (constraint, soft delete, trigger, data bawaan)
   smoke-ui.mjs        uji form -> server action -> database
+  check-periods.mjs   uji rentang periode harian/mingguan/bulanan/tahunan
+  check-history.mjs   uji halaman riwayat per periode
+  check-pwa.mjs       uji manifest, service worker, dan tag ikon
 postcss.config.mjs    pipeline Tailwind (jangan hapus)
 ```
 
@@ -133,10 +143,16 @@ Lima tabel di schema `public`: `profiles`, `wallets`, `categories`, `transaction
 ```
 node --env-file=.env.local scripts/smoke-data.mjs <email> <password>
 node --env-file=.env.local scripts/smoke-ui.mjs <email> <password> <baseUrl>
+node scripts/check-periods.mjs
+node --env-file=.env.local scripts/check-history.mjs <email> <password> <baseUrl>
+node scripts/check-pwa.mjs <baseUrl>
 ```
 
 `smoke-data.mjs` memeriksa data bawaan, constraint, trigger `server_updated_at`, dan soft delete.
 `smoke-ui.mjs` memastikan form transaksi benar-benar menyimpan lewat server action (server harus jalan).
+`check-periods.mjs` menguji logika rentang periode tanpa perlu server.
+`check-history.mjs` memastikan halaman riwayat menampilkan transaksi sesuai periode.
+`check-pwa.mjs` memastikan manifest, service worker, dan tag ikon tersaji.
 
 ## 7. Menguji RLS (Fase 0)
 
@@ -157,5 +173,40 @@ Selesai dan teruji terhadap Supabase sungguhan:
 - Navigasi bawah (HP) dan sidebar (laptop). Format Rupiah. Loading/error/kosong.
 
 Belum dikerjakan (sesuai PRD, fase lain):
-- Transfer antar dompet, filter/pencarian, anggaran, grafik, ekspor CSV, PWA/offline.
+- Transfer antar dompet, filter/pencarian, anggaran, grafik, ekspor CSV.
 - Konfirmasi hapus transaksi (saat ini satu klik tombol "Hapus transaksi").
+
+## 9. Status PWA (pasang + offline shell)
+
+Sudah terpasang:
+- `public/manifest.json` (standalone, ikon 192/512 + maskable, warna `#0b7d55`).
+- Ikon dari IconKitchen (web, iOS, Android) di `public/`.
+- `public/sw.js`: cache aset statis + `offline.html` saat navigasi gagal.
+- Banner "Pasang Catatan Uang" (`pwa-register.tsx`): tombol native di Android, petunjuk Safari di iOS.
+- `viewport-fit=cover` dan safe-area pada bottom nav untuk iPhone.
+
+Batas: **data tetap butuh internet**. Offline-first penuh (Dexie + antrean sinkron) adalah Fase 2.
+Mengubah `sw.js`? Naikkan `CACHE` di dalamnya agar cache lama terbuang.
+
+## 10. Aplikasi Windows (.exe)
+
+Stack: Electron + Next.js `output: "standalone"`. Tidak perlu Node di komputer pengguna.
+
+Berkas:
+- `desktop/main.mjs` — proses utama: cari port bebas, jalankan `resources/app/server.js` (pakai binary Electron sebagai Node), buka jendela. Log di `%APPDATA%\catatan-uang\desktop.log`.
+- `desktop/prepare-env.mjs` — salin kunci Supabase dari `.env.local` ke `desktop/app.env` (ikut dipaketkan; hanya publishable key).
+- `desktop/pack-assets.mjs` — susun `desktop/dist/app` = standalone + `.next/static` + `public` + `.env`.
+- `electron-builder.json` — target NSIS x64, ikon `desktop/icon.png`.
+- `desktop/release/Catatan Uang Setup <versi>.exe` — hasil installer.
+
+Perintah:
+```
+npm run build:win     # build Next + siapkan aset + installer .exe
+npm run desktop:dev   # uji cepat: electron memuat http://localhost:3000 (server dev harus jalan)
+```
+
+Catatan penting:
+- `node_modules` **tidak** boleh ikut entri `extraResources` pertama; harus entri filter terpisah (sudah diatur).
+- Folder `desktop/release` dan `desktop/dist` di-gitignore.
+- Build ulang setelah mengubah kode: `npm run build:win`.
+- Server lokal hanya di `127.0.0.1`, tanpa HTTPS — service worker PWA tidak aktif di dalam .exe (tidak diperlukan).

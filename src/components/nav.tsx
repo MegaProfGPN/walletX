@@ -19,7 +19,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-surface md:hidden"
+      className="fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {items.map((item) => {
         const active = isActive(pathname, item.href);
